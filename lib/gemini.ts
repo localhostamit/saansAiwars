@@ -6,10 +6,12 @@ import { SupportedLanguage } from '@/types/air';
  * - Conversational assistant with tool calling and context awareness
  * - Multimodal filter soot & mask fit image analysis
  * - 6 Languages: English (en), Hindi (hi), Hinglish (hinglish), Punjabi (pa), Bengali (bn), Marathi (mr)
+ * - Model: gemini-3.8-flash
  * - Graceful fallback mode if GEMINI_API_KEY is not configured
  */
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
 export interface ChatMessagePayload {
   role: 'user' | 'model';
@@ -17,7 +19,7 @@ export interface ChatMessagePayload {
 }
 
 export const SAANS_SYSTEM_PROMPT = `
-You are "Saans Mitr" (साँस मित्र), an empathetic, highly knowledgeable, and scientifically grounded GenAI environmental health assistant.
+You are "Saans Mitr" (साँस मित्र), an empathetic, highly knowledgeable, and scientifically grounded GenAI environmental health assistant powered by Gemini 3.8 Flash.
 Your mission is to help families and communities navigate severe winter smog, thermal inversions, and toxic urban air pollution (PM2.5, PM10, NO2, CO, SO2).
 
 Core Guidelines:
@@ -66,7 +68,7 @@ export async function askGeminiChat(
         case 'mr':
           return `सध्याच्या AQI (${currentContext?.aqi || 380}) पातळीवर साधा रुमाल किंवा कापडी मास्क PM2.5 रोखू शकत नाही. कृपया **डबल हेडबँड असलेला NIOSH N95 किंवा FFP2 मास्क** वापरा.\n\n**सील टेस्ट:** मास्क लावून वेगाने श्वास आत ओढा — मास्क किंचित आत दाबायला हवा. डोळ्यांजवळ हवा लिक होत असल्यास नाकाची मेटल क्लिप व्यवस्थित दाबा.`;
         default:
-          return `At the current AQI level of ${currentContext?.aqi || 380}, cloth masks and handkerchiefs offer virtually zero defense against PM2.5 (under 20% filtration). You should strictly use a **certified dual-headband N95 or FFP2 respirator**.\n\n**15-Second Seal Check:** Cup both hands over the mask and inhale sharply. The mask should slightly cup inward. If you feel air escaping near your eyes or cheeks, re-mold the metallic nosepiece with two fingers along your nasal bridge.`;
+          return `At the current AQI level of ${currentContext?.aqi || 380}, cloth masks and handkerchiefs offer virtually zero defense against PM2.5 (under 20% filtration). You should strictly use a **certified dual-headband N95 or FFP2 respirator**.\n\n**15-Second Seal Check:** Cup both hands over the mask and inhale sharply. The respirator should cup slightly inward with zero air leaking at perimeter. If you feel air escaping near your eyes or cheeks, re-mold the metallic nosepiece with two fingers along your nasal bridge.`;
       }
     }
 
@@ -106,7 +108,7 @@ export async function askGeminiChat(
   }
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
     
     // Inject live telemetry context into system message
     const contextPrompt = currentContext ? `
@@ -139,7 +141,7 @@ CRITICAL INSTRUCTION: Respond strictly in the "${lang}" language format.
 
     if (!response.ok) {
       const errText = await response.text();
-      console.warn('Gemini API call returned non-200, fallback to smart answer:', errText);
+      console.warn(`Gemini (${GEMINI_MODEL}) API call returned non-200, fallback to smart answer:`, errText);
       return askGeminiChat(history, currentContext); // fallback to simulated answer
     }
 
@@ -147,7 +149,7 @@ CRITICAL INSTRUCTION: Respond strictly in the "${lang}" language format.
     const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
     return candidate || "Saans Mitr is monitoring the air. How can I help protect your home today?";
   } catch (error) {
-    console.error('Error invoking Gemini:', error);
+    console.error(`Error invoking Gemini (${GEMINI_MODEL}):`, error);
     return "I am currently monitoring atmospheric sensors. Please ensure your N95 respirator is fitted properly and keep bedroom drafts sealed.";
   }
 }
@@ -184,7 +186,7 @@ export async function analyzeFilterImage(
   }
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
     const prompt = `
 Inspect this image of an air purifier filter, AC mesh, or respirator mask.
 Analyze:
@@ -230,7 +232,7 @@ Only output valid JSON.
       return JSON.parse(cleanJson);
     }
   } catch (err) {
-    console.error('Vision analysis error:', err);
+    console.error(`Vision analysis error with ${GEMINI_MODEL}:`, err);
   }
 
   return {
