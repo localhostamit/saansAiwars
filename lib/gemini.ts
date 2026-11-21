@@ -106,7 +106,7 @@ export async function askGeminiChat(
   }
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     // Inject live telemetry context into system message
     const contextPrompt = currentContext ? `
@@ -184,7 +184,7 @@ export async function analyzeFilterImage(
   }
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
     const prompt = `
 Inspect this image of an air purifier filter, AC mesh, or respirator mask.
 Analyze:
