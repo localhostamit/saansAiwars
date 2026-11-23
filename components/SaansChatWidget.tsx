@@ -42,6 +42,38 @@ interface Message {
   };
 }
 
+interface SpeechRecognitionResultItem {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  [index: number]: {
+    [index: number]: SpeechRecognitionResultItem;
+  };
+}
+
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface ISpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => ISpeechRecognitionInstance;
+
 export const SaansChatWidget: React.FC<SaansChatWidgetProps> = ({ currentData, language }) => {
   const t = translations[language];
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -54,7 +86,7 @@ export const SaansChatWidget: React.FC<SaansChatWidgetProps> = ({ currentData, l
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<ISpeechRecognitionInstance | null>(null);
 
   // Map language to Web Speech locale
   const getSpeechLocale = (lang: SupportedLanguage): string => {
@@ -71,21 +103,26 @@ export const SaansChatWidget: React.FC<SaansChatWidgetProps> = ({ currentData, l
   // Initialize Speech Recognition
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
+      const windowWithSpeech = window as unknown as {
+        SpeechRecognition?: SpeechRecognitionConstructor;
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+      };
+      const SpeechRecognitionClass = windowWithSpeech.SpeechRecognition || windowWithSpeech.webkitSpeechRecognition;
+      if (SpeechRecognitionClass) {
         setSpeechSupported(true);
-        const recognition = new SpeechRecognition();
+        const recognition = new SpeechRecognitionClass();
         recognition.continuous = false;
         recognition.interimResults = true;
 
-        recognition.onresult = (event: any) => {
-          const transcript = Array.from(event.results)
-            .map((res: any) => res[0].transcript)
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          const resultsArr = Array.from({ length: event.results.length }, (_, i) => event.results[i]);
+          const transcript = resultsArr
+            .map((res) => res?.[0]?.transcript || '')
             .join('');
           setInput(transcript);
         };
 
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.warn('Speech recognition error:', event.error);
           setIsListening(false);
         };

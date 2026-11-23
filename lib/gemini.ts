@@ -1,6 +1,4 @@
 import { SupportedLanguage } from '@/types/air';
-import { getRecommendedProductsForAqi } from './protective-products';
-import { generateDailyRoutine } from './routine-generator';
 
 /**
  * Google Gemini GenAI Client for "Saans" (साँस मित्र)
@@ -110,7 +108,12 @@ function getSimulatedFallback(
 }
 
 /**
- * Sends chat prompt to Gemini with a strict timeout and zero-recursion fallback.
+ * Sends a conversational environmental health prompt to the Gemini API with a strict
+ * 15-second AbortController timeout safeguard and deterministic fallback.
+ *
+ * @param history - The conversation thread history
+ * @param currentContext - Live atmospheric telemetry (AQI, PM2.5, category, language)
+ * @returns Formatted assistant response string
  */
 export async function askGeminiChat(
   history: ChatMessagePayload[],
@@ -126,12 +129,8 @@ export async function askGeminiChat(
   const lang: SupportedLanguage = currentContext?.language || 'en';
 
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
-    console.log(`[${new Date().toISOString()}] [Gemini Client] No GEMINI_API_KEY set. Returning instant simulated fallback.`);
     return getSimulatedFallback(history, currentContext);
   }
-
-  const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] [Gemini Client] Calling Gemini model: ${GEMINI_MODEL}`);
 
   // Enforce a strict 15-second AbortController timeout so Vercel never times out (504)
   const controller = new AbortController();
@@ -171,32 +170,34 @@ CRITICAL INSTRUCTION: Respond strictly in the "${lang}" language format.
 
     clearTimeout(timeoutId);
 
-    const elapsed = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] [Gemini Client] Received HTTP status ${response.status} in ${elapsed}ms`);
-
     if (!response.ok) {
       const errText = await response.text();
-      console.warn(`[${new Date().toISOString()}] [Gemini Client] API returned ${response.status}: ${errText.slice(0, 200)}. Returning fallback (no recursion).`);
+      console.warn(`[Gemini Client] API returned ${response.status}: ${errText.slice(0, 200)}. Returning fallback.`);
       return getSimulatedFallback(history, currentContext);
     }
 
     const data = await response.json();
     const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
     return candidate || getSimulatedFallback(history, currentContext);
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
-    const elapsed = Date.now() - startTime;
-    if (error?.name === 'AbortError') {
-      console.warn(`[${new Date().toISOString()}] [Gemini Client] Aborted after ${elapsed}ms (timeout safeguard). Returning fallback.`);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('[Gemini Client] Request aborted (15s timeout safeguard). Returning fallback.');
     } else {
-      console.error(`[${new Date().toISOString()}] [Gemini Client] Fetch error after ${elapsed}ms:`, error?.message || error);
+      console.error('[Gemini Client] Fetch error:', error instanceof Error ? error.message : error);
     }
     return getSimulatedFallback(history, currentContext);
   }
 }
 
 /**
- * Analyzes an image of an air purifier filter or mask with strict timeout protection.
+ * Analyzes an uploaded photograph of an air purifier filter, AC pre-filter mesh,
+ * or respirator mask using Gemini Multimodal Computer Vision.
+ *
+ * @param base64Data - Clean base64 encoded image string
+ * @param mimeType - Image MIME type (e.g., 'image/jpeg')
+ * @param language - Target language for localized diagnostic advice
+ * @returns Structured diagnostic payload with saturation score and replacement advice
  */
 export async function analyzeFilterImage(
   base64Data: string,
@@ -225,9 +226,6 @@ export async function analyzeFilterImage(
       adviceLocalized: localizedAdviceMap[language] || localizedAdviceMap.en
     };
   }
-
-  const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] [Gemini Vision] Calling model: ${GEMINI_MODEL}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 18000);
@@ -274,7 +272,6 @@ Only output valid JSON.
     });
 
     clearTimeout(timeoutId);
-    console.log(`[${new Date().toISOString()}] [Gemini Vision] Completed in ${Date.now() - startTime}ms with HTTP ${res.status}`);
 
     if (res.ok) {
       const data = await res.json();
@@ -282,9 +279,9 @@ Only output valid JSON.
       const cleanJson = rawText.replace(/```json\n?|\n?```/g, '').trim();
       return JSON.parse(cleanJson);
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     clearTimeout(timeoutId);
-    console.error(`[${new Date().toISOString()}] [Gemini Vision] Error after ${Date.now() - startTime}ms:`, err?.message || err);
+    console.error('[Gemini Vision] Analysis error:', err instanceof Error ? err.message : err);
   }
 
   return {

@@ -76,6 +76,13 @@ export function calculateCommuteEmissionsSaved(distanceKm: number = 20): {
   };
 }
 
+/**
+ * Aggregates cumulative health and emissions mitigation impact across all scheduled routine activities.
+ *
+ * @param routines - List of active, optimized daily routines
+ * @param currentPm25 - Ambient PM2.5 level in µg/m³
+ * @returns Comprehensive ImpactSummary object with inhaled dose avoided and CO2 offsets
+ */
 export function computeTotalImpact(routines: RoutineItem[], currentPm25: number): ImpactSummary {
   let dailyPm25DoseAvoidedUg = 0;
   let co2SavedKg = 0;

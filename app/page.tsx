@@ -10,7 +10,8 @@ import {
   Sparkles, 
   AlertCircle, 
   RefreshCw, 
-  AlertOctagon 
+  AlertOctagon,
+  LucideIcon 
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { AqiOverviewCard } from '@/components/AqiOverviewCard';
@@ -115,7 +116,7 @@ export default function HomePage() {
     return 'from-rose-950/35 via-red-950/20 to-slate-950';
   }, [currentAqi]);
 
-  const workspaceTabs: Array<{ id: ActiveWorkspaceTab; label: string; icon: any }> = [
+  const workspaceTabs: Array<{ id: ActiveWorkspaceTab; label: string; icon: LucideIcon }> = [
     { id: 'protect', label: t.tabs.protect, icon: ShieldCheck },
     { id: 'routine', label: t.tabs.routine, icon: Clock },
     { id: 'hacks', label: t.tabs.hacks, icon: Wrench },

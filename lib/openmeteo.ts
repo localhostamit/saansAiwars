@@ -22,7 +22,10 @@ export const POPULAR_CITIES: CityPreset[] = [
 ];
 
 /**
- * Calculates Indian / US standard AQI from PM2.5 concentration (µg/m³)
+ * Calculates official Indian CPCB / US EPA standard AQI from PM2.5 concentration (µg/m³).
+ *
+ * @param pm25 - Fine particulate matter concentration in µg/m³
+ * @returns Unified numerical AQI and localized category descriptors
  */
 export function calculateAqiFromPm25(pm25: number): { aqi: number; category: AqiCategory; categoryHi: string } {
   let aqi: number;
@@ -68,6 +71,14 @@ export function calculateAqiFromPm25(pm25: number): { aqi: number; category: Aqi
 
 /**
  * Computes winter temperature inversion risk & safe natural ventilation window
+ * based on ambient temperature, relative humidity, wind speed, and hour of day.
+ *
+ * @param temp - Temperature in degrees Celsius
+ * @param humidity - Relative humidity percentage
+ * @param windSpeed - Wind speed in km/h
+ * @param hour - Current hour in 24-hour format (0-23)
+ * @param aqi - Numerical Air Quality Index value
+ * @returns Stagnation risk level, ventilation action, and optimal solar mixing window
  */
 export function evaluateAtmosphericConditions(
   temp: number,
@@ -111,8 +122,15 @@ export function evaluateAtmosphericConditions(
 }
 
 /**
- * Open-Meteo Air Quality + Weather Fetcher (Zero-Key Fallback)
- * Works out-of-the-box with European Copernicus & CAMS atmospheric models
+ * Open-Meteo Air Quality + Weather Fetcher (Zero-Key Fallback).
+ * Directly interfaces with European Copernicus & CAMS atmospheric models
+ * to ensure continuous application uptime without requiring third-party API credentials.
+ *
+ * @param lat - Geographic latitude
+ * @param lon - Geographic longitude
+ * @param cityName - Name of target city
+ * @param country - Name of target country
+ * @returns Normalized AirQualityData telemetry object
  */
 export async function fetchOpenMeteoAirQuality(
   lat: number,

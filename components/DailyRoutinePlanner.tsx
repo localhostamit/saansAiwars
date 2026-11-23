@@ -140,7 +140,7 @@ export const DailyRoutinePlanner: React.FC<DailyRoutinePlannerProps> = ({ curren
             <div className="relative">
               <select
                 value={profile.commuteType}
-                onChange={(e: any) => setProfile({ ...profile, commuteType: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProfile({ ...profile, commuteType: e.target.value as FamilyProfile['commuteType'] })}
                 className="w-full h-full p-3 text-xs font-bold rounded-2xl border border-white/10 bg-slate-900 text-white focus:ring-2 focus:ring-emerald-500"
                 aria-label="Commute Type"
               >

@@ -285,6 +285,13 @@ export const PROTECTIVE_PRODUCTS: ProtectiveProduct[] = [
   }
 ];
 
+/**
+ * Retrieves certified protective equipment and environmental intervention products
+ * recommended for a specific Air Quality Index threshold.
+ *
+ * @param aqi - Real-time Air Quality Index value
+ * @returns Filtered array of applicable protective products
+ */
 export function getRecommendedProductsForAqi(aqi: number): ProtectiveProduct[] {
   return PROTECTIVE_PRODUCTS.filter(p => aqi >= p.minAqi);
 }

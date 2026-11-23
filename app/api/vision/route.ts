@@ -6,20 +6,11 @@ import { analyzeFilterImage } from '@/lib/gemini';
 import { SupportedLanguage } from '@/types/air';
 
 export async function POST(req: NextRequest) {
-  const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] [POST /api/vision] Request started`);
-
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.warn(`[${new Date().toISOString()}] [POST /api/vision] GEMINI_API_KEY environment variable is not defined`);
-    }
-
     const body = await req.json();
     const { imageBase64, mimeType, language } = body;
 
     if (!imageBase64) {
-      console.warn(`[${new Date().toISOString()}] [POST /api/vision] Missing imageBase64 parameter`);
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
@@ -32,12 +23,12 @@ export async function POST(req: NextRequest) {
       (language as SupportedLanguage) || 'en'
     );
 
-    console.log(`[${new Date().toISOString()}] [POST /api/vision] Completed in ${Date.now() - startTime}ms`);
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error(`[${new Date().toISOString()}] [POST /api/vision] Exception caught in handler (${Date.now() - startTime}ms):`, error);
+  } catch (error: unknown) {
+    console.error('[POST /api/vision] Error analyzing filter image:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to analyze filter image';
     return NextResponse.json(
-      { error: error?.message || 'Failed to analyze filter image' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

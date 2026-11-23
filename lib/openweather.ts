@@ -1,10 +1,23 @@
-import { AirQualityData, PollutantConcentrations, WeatherData } from '@/types/air';
+import { AirQualityData, PollutantConcentrations, WeatherData, AqiCategory } from '@/types/air';
 import { fetchOpenMeteoAirQuality, calculateAqiFromPm25, evaluateAtmosphericConditions } from './openmeteo';
 
+interface OpenWeatherForecastComponent {
+  dt: number;
+  components?: {
+    pm2_5?: number;
+  };
+}
+
 /**
- * OpenWeather Air Pollution & Current Weather Client
- * Endpoint: /data/2.5/air_pollution and /data/2.5/weather
- * Gracefully falls back to Open-Meteo if OPENWEATHER_API_KEY is not set or invalid
+ * Fetches real-time air pollution and weather metrics from OpenWeather API.
+ * Automatically falls back to Open-Meteo European CAMS model if the API key
+ * is absent, invalid, or rate-limited.
+ *
+ * @param lat - Latitude coordinate
+ * @param lon - Longitude coordinate
+ * @param cityName - Human-readable city name
+ * @param country - Country name
+ * @returns Unified AirQualityData telemetry object
  */
 export async function getAirQualityData(
   lat: number,
@@ -79,13 +92,13 @@ export async function getAirQualityData(
     };
 
     // Try optional forecast
-    let hourlyForecast: Array<{ time: string; aqi: number; pm2_5: number; category: any }> = [];
+    let hourlyForecast: Array<{ time: string; aqi: number; pm2_5: number; category: AqiCategory }> = [];
     try {
       const forecastRes = await fetch(forecastUrl, { next: { revalidate: 1800 } });
       if (forecastRes.ok) {
         const forecastJson = await forecastRes.json();
-        const items = (forecastJson.list || []).slice(0, 10);
-        hourlyForecast = items.map((item: any) => {
+        const items: OpenWeatherForecastComponent[] = (forecastJson.list || []).slice(0, 10);
+        hourlyForecast = items.map((item: OpenWeatherForecastComponent) => {
           const pm = item.components?.pm2_5 || 50;
           const calc = calculateAqiFromPm25(pm);
           const date = new Date(item.dt * 1000);

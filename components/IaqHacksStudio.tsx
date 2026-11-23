@@ -134,7 +134,7 @@ export const IaqHacksStudio: React.FC<IaqHacksStudioProps> = ({ language }) => {
               </label>
               <select
                 value={fanSpeed}
-                onChange={(e: any) => setFanSpeed(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFanSpeed(e.target.value as 'low' | 'med' | 'high')}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 <option value="high">{language === 'hi' ? 'तेज (High - 320 CFM)' : 'High (320 CFM)'}</option>

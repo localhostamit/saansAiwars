@@ -10,6 +10,14 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   commuteType: 'two-wheeler',
 };
 
+/**
+ * Generates an optimized, vulnerability-adjusted daily schedule that minimizes
+ * peak particulate inhalation during severe winter smog episodes.
+ *
+ * @param currentAqi - Real-time Air Quality Index value
+ * @param profile - Family demographics and vulnerability risk factors
+ * @returns Array of tailored, low-emission routine items
+ */
 export function generateDailyRoutine(
   currentAqi: number,
   profile: FamilyProfile = DEFAULT_FAMILY_PROFILE
